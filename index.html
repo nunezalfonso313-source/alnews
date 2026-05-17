@@ -24,7 +24,7 @@ header{background:var(--ink);color:var(--paper);position:sticky;top:0;z-index:10
 .ticker-wrap{background:var(--accent);overflow:hidden;padding:5px 0;position:relative;height:26px;display:flex;align-items:center}
 .ticker-label{position:absolute;background:#8b1a12;color:white;padding:0 10px;font-size:10px;letter-spacing:2px;font-weight:600;height:100%;display:flex;align-items:center;z-index:2}
 .ticker-container{flex:1;overflow:hidden;padding-left:90px}
-.ticker-track{display:flex;animation:ticker 40s linear infinite;white-space:nowrap}
+.ticker-track{display:flex;animation:ticker 50s linear infinite;white-space:nowrap}
 .ticker-track:hover{animation-play-state:paused}
 @keyframes ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
 .ticker-item{color:white;font-size:12px;padding:0 30px;font-weight:600}
@@ -40,8 +40,8 @@ main{max-width:1300px;margin:0 auto;padding:28px 16px;position:relative;z-index:
 @media(max-width:768px){.hero-section{grid-template-columns:1fr}.hero-aside{border-left:none!important;border-top:1px solid var(--border)}}
 .hero-main{padding:28px;display:flex;flex-direction:column;justify-content:flex-end;min-height:320px;position:relative;overflow:hidden}
 .hero-image{position:absolute;inset:0;background:linear-gradient(135deg,var(--accent2) 0%,#0d1f35 100%);overflow:hidden}
-.hero-image img{width:100%;height:100%;object-fit:cover;opacity:0.35;transition:opacity 0.3s}
-.hero-main:hover .hero-image img{opacity:0.45}
+.hero-image img{width:100%;height:100%;object-fit:cover;opacity:0.4;transition:opacity 0.3s}
+.hero-main:hover .hero-image img{opacity:0.5}
 .hero-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(10,10,10,0.92) 0%,rgba(10,10,10,0.3) 60%,transparent 100%)}
 .hero-content{position:relative;z-index:2}
 .hero-tag{display:inline-block;background:var(--accent);color:white;font-size:9px;letter-spacing:2px;text-transform:uppercase;font-weight:700;padding:3px 8px;margin-bottom:10px}
@@ -130,41 +130,32 @@ footer span{color:var(--accent)}
 </div>
 <div id="news-grid" class="news-grid"></div>
 </main>
-<footer><p>AlNews · RSS públicos · <span>Sin rastreo · Sin cookies</span></p><p style="margin-top:6px">Auto-actualización cada 5 min</p></footer>
+<footer><p>AlNews · GNews API · <span>Sin rastreo · Sin cookies</span></p><p style="margin-top:6px">Auto-actualización cada 5 min</p></footer>
 <div class="refresh-badge" id="refresh-badge">✓ Noticias actualizadas</div>
 <script>
-// Proxy CORS — allorigins convierte cualquier RSS a texto accesible desde browser
-const PROXY = 'https://api.allorigins.win/get?url=';
+const API_KEY = '3a983c42ced65a9e87b0e66540442451';
+const BASE = 'https://gnews.io/api/v4';
 
-const FEEDS = [
-  {name:'BBC Mundo',    url:'https://feeds.bbci.co.uk/mundo/rss.xml',              lang:'ES',flag:'🌎',cat:'mundo'},
-  {name:'CNN Español',  url:'https://cnnespanol.cnn.com/feed/',                     lang:'ES',flag:'🌎',cat:'mundo'},
-  {name:'DW Español',   url:'https://rss.dw.com/rdf/rss-es-all',                    lang:'ES',flag:'🇩🇪',cat:'mundo'},
-  {name:'El País',      url:'https://feeds.elpais.com/mrss-s/pages/ep/site/elpais.com/portada',lang:'ES',flag:'🇪🇸',cat:'mundo'},
-  {name:'Milenio',      url:'https://www.milenio.com/rss',                          lang:'ES',flag:'🇲🇽',cat:'mexico'},
-  {name:'La Jornada',   url:'https://www.jornada.com.mx/rss/edicion.xml',           lang:'ES',flag:'🇲🇽',cat:'mexico'},
-  {name:'Infobae',      url:'https://www.infobae.com/feeds/rss/',                   lang:'ES',flag:'🇦🇷',cat:'latam'},
-  {name:'BBC News',     url:'https://feeds.bbci.co.uk/news/rss.xml',               lang:'EN',flag:'🇬🇧',cat:'mundo'},
-  {name:'DW English',   url:'https://rss.dw.com/rdf/rss-en-all',                   lang:'EN',flag:'🇩🇪',cat:'mundo'},
-  {name:'Al Jazeera',   url:'https://www.aljazeera.com/xml/rss/all.xml',            lang:'EN',flag:'🌍',cat:'mundo'},
-  {name:'Marca',        url:'https://e00-marca.uecdn.es/rss/portada.xml',           lang:'ES',flag:'🏆',cat:'deportes'},
-  {name:'ESPN Deportes',url:'https://www.espn.com/espn/rss/deportes/news',          lang:'ES',flag:'⚽',cat:'deportes'},
-  {name:'ESPN',         url:'https://www.espn.com/espn/rss/news',                  lang:'EN',flag:'🏈',cat:'deportes'},
-  {name:'Xataka',       url:'https://feeds.weblogssl.com/xataka/rss',              lang:'ES',flag:'💡',cat:'tech'},
-  {name:'TechCrunch',   url:'https://techcrunch.com/feed/',                         lang:'EN',flag:'💻',cat:'tech'},
-  {name:'Wired',        url:'https://www.wired.com/feed/rss',                      lang:'EN',flag:'🤖',cat:'tech'},
-  {name:'NASA',         url:'https://www.nasa.gov/rss/dyn/breaking_news.rss',      lang:'EN',flag:'🚀',cat:'ciencia'},
-  {name:'Science Daily',url:'https://www.sciencedaily.com/rss/all.xml',            lang:'EN',flag:'🔬',cat:'ciencia'},
+const CATS = [
+  {key:'todo',    label:'🌐 Todo',      q:'noticias',     lang:'es'},
+  {key:'mundo',   label:'📰 Mundo',     q:'world news',   lang:'es'},
+  {key:'mexico',  label:'🇲🇽 México',   q:'México',       lang:'es'},
+  {key:'latam',   label:'🌎 Latam',     q:'latinoamérica',lang:'es'},
+  {key:'deportes',label:'⚽ Deportes',  q:'deportes',     lang:'es'},
+  {key:'tech',    label:'💻 Tech',      q:'tecnología',   lang:'es'},
+  {key:'ciencia', label:'🔬 Ciencia',   q:'ciencia',      lang:'es'},
 ];
 
-const CATS=[
-  {key:'todo',label:'🌐 Todo'},
-  {key:'mundo',label:'📰 Mundo'},
-  {key:'mexico',label:'🇲🇽 México'},
-  {key:'latam',label:'🌎 Latam'},
-  {key:'deportes',label:'⚽ Deportes'},
-  {key:'tech',label:'💻 Tech'},
-  {key:'ciencia',label:'🔬 Ciencia'},
+// GNews topics para headlines
+const TOPICS = [
+  {topic:'world',    lang:'es', flag:'🌎', cat:'mundo'},
+  {topic:'world',    lang:'en', flag:'🌍', cat:'mundo'},
+  {topic:'nation',   lang:'es', flag:'🇲🇽', cat:'mexico'},
+  {topic:'sports',   lang:'es', flag:'⚽', cat:'deportes'},
+  {topic:'sports',   lang:'en', flag:'🏈', cat:'deportes'},
+  {topic:'technology',lang:'es',flag:'💻', cat:'tech'},
+  {topic:'technology',lang:'en',flag:'🤖', cat:'tech'},
+  {topic:'science',  lang:'en', flag:'🔬', cat:'ciencia'},
 ];
 
 let allArticles=[], currentCat='todo', heroUrl='';
@@ -185,50 +176,50 @@ function initCats(){
   });
 }
 
-async function fetchFeed(feed){
+async function fetchTopic(t){
   try{
-    const proxyUrl = PROXY + encodeURIComponent(feed.url);
-    const r = await fetch(proxyUrl, {signal: AbortSignal.timeout(10000)});
-    if(!r.ok) return [];
-    const data = await r.json();
-    if(!data.contents) return [];
-    const parser = new DOMParser();
-    const xml = parser.parseFromString(data.contents, 'text/xml');
-    const items = Array.from(xml.querySelectorAll('item'));
-    return items.slice(0,15).map(item=>{
-      const title = item.querySelector('title')?.textContent || '';
-      const desc = item.querySelector('description')?.textContent || '';
-      const link = item.querySelector('link')?.textContent || '';
-      const pubDate = item.querySelector('pubDate')?.textContent || '';
-      const enclosure = item.querySelector('enclosure');
-      const mediaThumbnail = item.getElementsByTagNameNS('http://search.yahoo.com/mrss/','thumbnail')[0];
-      const image = enclosure?.getAttribute('url') || mediaThumbnail?.getAttribute('url') || extractImg(desc) || '';
-      return {
-        title: stripHtml(title),
-        desc: stripHtml(desc),
-        link: link.trim(),
-        image,
-        pubDate,
-        source: feed.name,
-        flag: feed.flag,
-        lang: feed.lang,
-        cat: feed.cat
-      };
-    });
-  }catch(e){return [];}
+    const url=`${BASE}/top-headlines?topic=${t.topic}&lang=${t.lang}&max=10&apikey=${API_KEY}`;
+    const r=await fetch(url,{signal:AbortSignal.timeout(10000)});
+    if(!r.ok)return[];
+    const d=await r.json();
+    if(!d.articles)return[];
+    return d.articles.map(a=>({
+      title:a.title||'',
+      desc:a.description||'',
+      link:a.url||'',
+      image:a.image||'',
+      pubDate:a.publishedAt||'',
+      source:a.source?.name||'GNews',
+      flag:t.flag,
+      lang:t.lang.toUpperCase(),
+      cat:t.cat
+    }));
+  }catch{return[];}
 }
 
-function stripHtml(s){return s.replace(/<!\[CDATA\[|\]\]>/g,'').replace(/<[^>]*>/g,'').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/&nbsp;/g,' ').trim()}
-function extractImg(html){if(!html)return'';const m=html.match(/<img[^>]+src=["']([^"']+)["']/i);return m?m[1]:''}
-function timeAgo(dateStr){if(!dateStr)return'';const d=new Date(dateStr);if(isNaN(d))return'';const diff=Math.floor((Date.now()-d)/60000);if(diff<1)return'Ahora';if(diff<60)return`Hace ${diff}m`;if(diff<1440)return`Hace ${Math.floor(diff/60)}h`;return`Hace ${Math.floor(diff/1440)}d`}
+function timeAgo(dateStr){
+  if(!dateStr)return'';
+  const d=new Date(dateStr);
+  if(isNaN(d))return'';
+  const diff=Math.floor((Date.now()-d)/60000);
+  if(diff<1)return'Ahora';
+  if(diff<60)return`Hace ${diff}m`;
+  if(diff<1440)return`Hace ${Math.floor(diff/60)}h`;
+  return`Hace ${Math.floor(diff/1440)}d`;
+}
 
 async function loadAll(){
   showSkeletons();
-  const results = await Promise.allSettled(FEEDS.map(f=>fetchFeed(f)));
+  const results=await Promise.allSettled(TOPICS.map(t=>fetchTopic(t)));
   allArticles=[];
   results.forEach(r=>{if(r.status==='fulfilled')allArticles.push(...r.value)});
   const seen=new Set();
-  allArticles=allArticles.filter(a=>{const k=a.title.slice(0,60);if(seen.has(k))return false;seen.add(k);return true});
+  allArticles=allArticles.filter(a=>{
+    const k=a.title.slice(0,60);
+    if(seen.has(k))return false;
+    seen.add(k);
+    return true;
+  });
   allArticles.sort((a,b)=>new Date(b.pubDate)-new Date(a.pubDate));
   renderHero();
   renderTicker();
@@ -237,18 +228,14 @@ async function loadAll(){
 }
 
 function renderHero(){
-  const pool=allArticles.filter(a=>a.image&&a.cat==='mundo').slice(0,8);
-  if(!pool.length){
-    const any=allArticles.filter(a=>a.image).slice(0,1);
-    if(!any.length)return;
-    pool.push(...any);
-  }
+  const pool=allArticles.filter(a=>a.image&&a.cat==='mundo');
+  if(!pool.length)return;
   const h=pool[0];
   heroUrl=h.link;
   document.getElementById('hero-img').src=h.image;
   document.getElementById('hero-tag').textContent=h.source.toUpperCase();
   document.getElementById('hero-title').textContent=h.title;
-  document.getElementById('hero-desc').textContent=h.desc.slice(0,200);
+  document.getElementById('hero-desc').textContent=h.desc.slice(0,220);
   document.getElementById('hero-source').textContent=h.flag+' '+h.source;
   document.getElementById('hero-time').textContent=timeAgo(h.pubDate);
   document.getElementById('hero').style.display='grid';
@@ -278,7 +265,7 @@ function renderGrid(){
   const grid=document.getElementById('news-grid');
   grid.innerHTML='';
   if(!filtered.length){
-    grid.innerHTML='<div class="error-box"><p style="font-size:2rem">📭</p><p>No hay artículos.<br>Intenta actualizar.</p></div>';
+    grid.innerHTML='<div class="error-box"><p style="font-size:2rem">📭</p><p>Sin artículos en esta categoría.</p></div>';
     return;
   }
   filtered.forEach((a,i)=>{
@@ -286,7 +273,7 @@ function renderGrid(){
     card.className='news-card';
     card.style.animationDelay=`${Math.min(i,20)*40}ms`;
     const imgHtml=a.image
-      ?`<img class="card-img" src="${a.image}" alt="" onerror="this.outerHTML='<div class=\\'card-img-placeholder\\'>${a.flag}</div>'" loading="lazy">`
+      ?`<img class="card-img" src="${a.image}" alt="" onerror="this.outerHTML='<div class=\\'card-img-placeholder\\'>📰</div>'" loading="lazy">`
       :`<div class="card-img-placeholder">${a.flag}</div>`;
     card.innerHTML=`${imgHtml}<div class="card-body"><div class="card-source-row"><span class="card-source">${a.source}</span><span>${a.flag}</span></div><div class="card-title">${a.title}</div><div class="card-desc">${a.desc.slice(0,120)}</div><div class="card-footer"><span>${timeAgo(a.pubDate)}</span>${a.lang==='EN'?'<span class="card-lang">EN</span>':''}</div></div>`;
     card.onclick=()=>window.open(a.link,'_blank');

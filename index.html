@@ -41,7 +41,6 @@ main{max-width:1300px;margin:0 auto;padding:28px 16px;position:relative;z-index:
 .hero-main{padding:28px;display:flex;flex-direction:column;justify-content:flex-end;min-height:320px;position:relative;overflow:hidden}
 .hero-image{position:absolute;inset:0;background:linear-gradient(135deg,var(--accent2) 0%,#0d1f35 100%);overflow:hidden}
 .hero-image img{width:100%;height:100%;object-fit:cover;opacity:0.4;transition:opacity 0.3s}
-.hero-main:hover .hero-image img{opacity:0.5}
 .hero-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(10,10,10,0.92) 0%,rgba(10,10,10,0.3) 60%,transparent 100%)}
 .hero-content{position:relative;z-index:2}
 .hero-tag{display:inline-block;background:var(--accent);color:white;font-size:9px;letter-spacing:2px;text-transform:uppercase;font-weight:700;padding:3px 8px;margin-bottom:10px}
@@ -130,32 +129,32 @@ footer span{color:var(--accent)}
 </div>
 <div id="news-grid" class="news-grid"></div>
 </main>
-<footer><p>AlNews · GNews API · <span>Sin rastreo · Sin cookies</span></p><p style="margin-top:6px">Auto-actualización cada 5 min</p></footer>
+<footer><p>AlNews · NewsData.io · <span>Sin rastreo · Sin cookies</span></p><p style="margin-top:6px">Auto-actualización cada 5 min</p></footer>
 <div class="refresh-badge" id="refresh-badge">✓ Noticias actualizadas</div>
 <script>
-const API_KEY = '3a983c42ced65a9e87b0e66540442451';
-const BASE = 'https://gnews.io/api/v4';
+const API_KEY = 'pub_d03862cbc05e4a0088a1615ef27f3e12';
+const BASE = 'https://newsdata.io/api/1/news';
 
-const CATS = [
-  {key:'todo',    label:'🌐 Todo',      q:'noticias',     lang:'es'},
-  {key:'mundo',   label:'📰 Mundo',     q:'world news',   lang:'es'},
-  {key:'mexico',  label:'🇲🇽 México',   q:'México',       lang:'es'},
-  {key:'latam',   label:'🌎 Latam',     q:'latinoamérica',lang:'es'},
-  {key:'deportes',label:'⚽ Deportes',  q:'deportes',     lang:'es'},
-  {key:'tech',    label:'💻 Tech',      q:'tecnología',   lang:'es'},
-  {key:'ciencia', label:'🔬 Ciencia',   q:'ciencia',      lang:'es'},
+const QUERIES = [
+  {params:'language=es&category=top',          flag:'🌎', cat:'mundo'},
+  {params:'language=en&category=top',          flag:'🌍', cat:'mundo'},
+  {params:'language=es&country=mx',            flag:'🇲🇽', cat:'mexico'},
+  {params:'language=es&category=politics',     flag:'🌎', cat:'mundo'},
+  {params:'language=es&category=sports',       flag:'⚽', cat:'deportes'},
+  {params:'language=en&category=sports',       flag:'🏈', cat:'deportes'},
+  {params:'language=es&category=technology',   flag:'💡', cat:'tech'},
+  {params:'language=en&category=technology',   flag:'💻', cat:'tech'},
+  {params:'language=en&category=science',      flag:'🔬', cat:'ciencia'},
 ];
 
-// GNews topics para headlines
-const TOPICS = [
-  {topic:'world',    lang:'es', flag:'🌎', cat:'mundo'},
-  {topic:'world',    lang:'en', flag:'🌍', cat:'mundo'},
-  {topic:'nation',   lang:'es', flag:'🇲🇽', cat:'mexico'},
-  {topic:'sports',   lang:'es', flag:'⚽', cat:'deportes'},
-  {topic:'sports',   lang:'en', flag:'🏈', cat:'deportes'},
-  {topic:'technology',lang:'es',flag:'💻', cat:'tech'},
-  {topic:'technology',lang:'en',flag:'🤖', cat:'tech'},
-  {topic:'science',  lang:'en', flag:'🔬', cat:'ciencia'},
+const CATS=[
+  {key:'todo',    label:'🌐 Todo'},
+  {key:'mundo',   label:'📰 Mundo'},
+  {key:'mexico',  label:'🇲🇽 México'},
+  {key:'latam',   label:'🌎 Latam'},
+  {key:'deportes',label:'⚽ Deportes'},
+  {key:'tech',    label:'💻 Tech'},
+  {key:'ciencia', label:'🔬 Ciencia'},
 ];
 
 let allArticles=[], currentCat='todo', heroUrl='';
@@ -176,25 +175,25 @@ function initCats(){
   });
 }
 
-async function fetchTopic(t){
+async function fetchQuery(q){
   try{
-    const url=`${BASE}/top-headlines?topic=${t.topic}&lang=${t.lang}&max=10&apikey=${API_KEY}`;
+    const url=`${BASE}?apikey=${API_KEY}&${q.params}&size=10`;
     const r=await fetch(url,{signal:AbortSignal.timeout(10000)});
     if(!r.ok)return[];
     const d=await r.json();
-    if(!d.articles)return[];
-    return d.articles.map(a=>({
+    if(!d.results)return[];
+    return d.results.map(a=>({
       title:a.title||'',
       desc:a.description||'',
-      link:a.url||'',
-      image:a.image||'',
-      pubDate:a.publishedAt||'',
-      source:a.source?.name||'GNews',
-      flag:t.flag,
-      lang:t.lang.toUpperCase(),
-      cat:t.cat
+      link:a.link||'',
+      image:a.image_url||'',
+      pubDate:a.pubDate||'',
+      source:a.source_name||a.source_id||'News',
+      flag:q.flag,
+      lang:(a.language||'es').toUpperCase(),
+      cat:q.cat
     }));
-  }catch{return[];}
+  }catch(e){return[];}
 }
 
 function timeAgo(dateStr){
@@ -210,7 +209,7 @@ function timeAgo(dateStr){
 
 async function loadAll(){
   showSkeletons();
-  const results=await Promise.allSettled(TOPICS.map(t=>fetchTopic(t)));
+  const results=await Promise.allSettled(QUERIES.map(q=>fetchQuery(q)));
   allArticles=[];
   results.forEach(r=>{if(r.status==='fulfilled')allArticles.push(...r.value)});
   const seen=new Set();
